@@ -1,3 +1,3 @@
-import TextInput from "./components/TextInput";
+import AiCopilot from "./components/AiCopilot";
 
-export { TextInput };
+export { AiCopilot };
