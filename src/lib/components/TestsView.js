@@ -22,15 +22,15 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
 import AddCircleOutlineOutlined from '@material-ui/icons/AddCircleOutlineOutlined';
 import AssignmentIcon from '@material-ui/icons/Assignment';
-import {useNavigate} from 'react-router-dom';
+import PropTypes from 'prop-types';
 import { v4 as uuidv4 } from 'uuid';
-import {waitForElement, findElementByXPath, triggerClickEvent, typeText} from './aiCopilotUtils';
+import {waitForElement, findElementByXPath, triggerClickEvent, typeText, navigateTo} from './aiCopilotUtils';
 import useStyles from './TestsView.jss';
 
 // ----------------------------------------------------------------------
 
-export default function TestsView(props) {
-    const { trainedData } = props;
+function TestsView(props) {
+    const { trainedData, history, navigate } = props;
     const [testsData, setTestsData] = useState({});
     const [testName, setTestName] = useState('');
     const [stepsForAI, setStepsForAI] = useState('');
@@ -38,7 +38,6 @@ export default function TestsView(props) {
     const [showAddTestSuiteForm, setShowAddTestSuiteForm] = useState(false);
     const [showAddTestForm, setShowAddTestForm] = useState(false);
     const [executState, setExecutState] = useState({});
-    const navigate = useNavigate();
     const classes = useStyles();
 
     const handleChange = (e, obj) => {
@@ -52,7 +51,13 @@ export default function TestsView(props) {
         for(let i=0; i<test.steps.length; i+=1) {
             const tc = test.steps[i];
             if(tc.command === 'open') {
-                navigate(tc.target, { replace: true });
+                if (history) {
+                  history.push(tc.target);
+                } else if (navigate) {
+                  navigate(tc.target);
+                } else {
+                  navigateTo(tc.target);
+                }
                 executState[tc.id] = 'success';
             } else if(tc.command === 'assert element present') {
                 await waitForElement(tc.target);
@@ -371,3 +376,15 @@ export default function TestsView(props) {
     </Box>
   );
 }
+
+TestsView.propTypes = {
+  navigate: PropTypes.function,
+  history: PropTypes.object,
+};
+
+TestsView.defaultProps = {
+  navigate: null,
+  history: null,
+};
+
+export default TestsView;

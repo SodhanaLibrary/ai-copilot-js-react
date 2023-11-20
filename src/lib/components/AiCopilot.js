@@ -11,6 +11,7 @@ import Tab from '@material-ui/core/Tab';
 import TrainIcon from '@material-ui/icons/TrainOutlined';
 import PhotoIcon from '@material-ui/icons/Photo';
 import CloseIcon from '@material-ui/icons/Close';
+import PropTypes from 'prop-types';
 import TestsView from './TestsView';
 import useStyles from './AiCopilot.jss';
 import TrainedDataView from './TrainedDataView';
@@ -25,6 +26,7 @@ import {
 } from './aiCopilotUtils';
 
 function AiCopilot(props) {
+  const {navigate, history} = props;
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [openAutomation, setOpenAutomation] = React.useState(false);
   const [trainData, setTrainData] = React.useState({});
@@ -262,7 +264,7 @@ function AiCopilot(props) {
           </Box>
 
           {tabValue === 0 && <TrainedDataView onChangeTrainedData={onChangeTrainedData} trainedData={trainData} />}
-          {tabValue === 1 && <TestsView trainedData={trainData}/>}
+          {tabValue === 1 && <TestsView navigate={navigate} history={history} trainedData={trainData}/>}
           {tabValue === 2 && <TrainedDataView trainedData={trainData} />}
         </Box>
       </Drawer>
@@ -270,8 +272,14 @@ function AiCopilot(props) {
   );
 }
 
-AiCopilot.propTypes = {};
+AiCopilot.propTypes = {
+  navigate: PropTypes.function,
+  history: PropTypes.object
+};
 
-AiCopilot.defaultProps = {};
+AiCopilot.defaultProps = {
+  navigate: null,
+  history: null
+};
 
 export default React.memo(AiCopilot);

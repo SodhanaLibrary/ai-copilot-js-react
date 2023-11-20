@@ -7,7 +7,7 @@ export const triggerClickEvent = (element) => {
         cancelable: true,
         view: window
       });
-  
+
       // Dispatch the click event on the element
       element.dispatchEvent(event);
     } else {
@@ -23,13 +23,13 @@ export const findElementByXPath = (xpath) => {
     XPathResult.FIRST_ORDERED_NODE_TYPE,
     null
   );
-  
+
   return result.singleNodeValue;
 };
 
 export const waitForElement = async (xpath, timeout = 3000) => {
     const startTime = Date.now();
-  
+
     return new Promise((resolve, reject) => {
       function checkElement() {
         const element = findElementByXPath(xpath);
@@ -44,7 +44,7 @@ export const waitForElement = async (xpath, timeout = 3000) => {
           resolve(null);
         }
       }
-  
+
       // Start checking for the element
       checkElement();
     });
@@ -57,7 +57,7 @@ export const typeText = async (element, text, speed = 100) => {
       function typeCharacter() {
         if (index < text.length) {
           const char = text.charAt(index);
-          
+
           // If the element is an input, set the value attribute
           if (element instanceof HTMLInputElement) {
             element.value += char;
@@ -72,20 +72,20 @@ export const typeText = async (element, text, speed = 100) => {
             // For other elements, set the innerText or innerHTML property
             element.innerText += char;
           }
-    
+
           index+=1;
-    
+
           // Call the function recursively for the next character
           setTimeout(typeCharacter, speed);
         } else {
           resolve(null);
         }
       }
-    
+
       // Start typing the text
       typeCharacter();
     });
-  
+
 }
 
 // // Trigger a keydown event for the 'Enter' key
@@ -99,7 +99,7 @@ export const triggerKeyEvent = (element, eventType, key, options = {}) => {
       console.error('Invalid target element.');
       return;
     }
-  
+
     const eventOptions = {
       key: key || '',
       code: options.code || '',
@@ -112,7 +112,7 @@ export const triggerKeyEvent = (element, eventType, key, options = {}) => {
       bubbles: options.bubbles || true,
       cancelable: options.cancelable || true,
     };
-  
+
     try {
       const event = new KeyboardEvent(eventType, eventOptions);
       element.dispatchEvent(event);
@@ -126,14 +126,14 @@ export const triggerMouseOverEvent = (element) => {
       console.error('Invalid target element.');
       return;
     }
-  
+
     try {
       const event = new MouseEvent('mouseover', {
         bubbles: true,
         cancelable: true,
         view: window,
       });
-  
+
       element.dispatchEvent(event);
     } catch (e) {
       console.error('Error creating or dispatching the mouseover event:', e);
@@ -145,14 +145,14 @@ export const triggerMouseDownEvent = (element) => {
       console.error('Invalid target element.');
       return;
     }
-  
+
     try {
       const event = new MouseEvent('mousedown', {
         bubbles: true,
         cancelable: true,
         view: window
       });
-  
+
       element.dispatchEvent(event);
     } catch (e) {
       console.error('Error creating or dispatching the mouse down event:', e);
@@ -256,14 +256,14 @@ export const  triggerMouseOutEvent = (element) => {
       console.error('Invalid target element.');
       return;
     }
-  
+
     try {
       const event = new MouseEvent('mouseout', {
         bubbles: true,
         cancelable: true,
         view: window
       });
-  
+
       element.dispatchEvent(event);
     } catch (e) {
       console.error('Error creating or dispatching the mouse out event:', e);
@@ -275,7 +275,7 @@ export const  triggerMouseMoveEvent = (element, clientX, clientY) => {
       console.error('Invalid target element.');
       return;
     }
-  
+
     try {
       const event = new MouseEvent('mousemove', {
         bubbles: true,
@@ -284,7 +284,7 @@ export const  triggerMouseMoveEvent = (element, clientX, clientY) => {
         clientX: clientX || 0,
         clientY: clientY || 0,
       });
-  
+
       element.dispatchEvent(event);
     } catch (e) {
       console.error('Error creating or dispatching the mouse move event:', e);
@@ -296,14 +296,14 @@ export const  triggerMouseUpEvent = (element) => {
       console.error('Invalid target element.');
       return;
     }
-  
+
     try {
       const event = new MouseEvent('mouseup', {
         bubbles: true,
         cancelable: true,
         view: window,
       });
-  
+
       element.dispatchEvent(event);
     } catch (e) {
       console.error('Error creating or dispatching the mouse up event:', e);
@@ -319,7 +319,7 @@ export const  pause = (milliseconds) => {
 // Function to navigate to a new route
 export const  navigateTo = (route) => {
     // Update the browser's URL without causing a page reload
-    window.history.pushState(null, null, route);
+    window.history.replaceState(null, null, route);
 };
 
 // Function to find elements with onClick functions
@@ -420,7 +420,7 @@ export const getHeaderElementsWithVisibleText = () => {
 
   // Recursively traverse the DOM tree starting from the document body
   function traverse(element) {
-    if (hasVisibleText(element) 
+    if (hasVisibleText(element)
          && (element.tagName.toLowerCase() === 'h1'
               || element.tagName.toLowerCase() === 'h2'
               || element.tagName.toLowerCase() === 'h3'
@@ -446,7 +446,7 @@ export const getHeaderElementsWithVisibleText = () => {
 
 export const getElementDimensions = (element) => {
   const rect = element.getBoundingClientRect();
-  
+
   return {
     x: rect.left + window.scrollX,
     y: rect.top + window.scrollY,
