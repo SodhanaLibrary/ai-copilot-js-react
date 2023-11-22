@@ -24,14 +24,14 @@ import AddCircleOutlineOutlined from '@material-ui/icons/AddCircleOutlineOutline
 import AssignmentIcon from '@material-ui/icons/Assignment';
 import PropTypes from 'prop-types';
 import { v4 as uuidv4 } from 'uuid';
-import {waitForElement, findElementByXPath, triggerClickEvent, typeText, navigateTo} from './aiCopilotUtils';
+import {waitForElement, findElementByXPath, triggerClickEvent, typeText, navigateTo, findElementBySelector} from './aiCopilotUtils';
 import useStyles from './TestsView.jss';
 
 // ----------------------------------------------------------------------
 
 function TestsView(props) {
     const { trainedData, history, navigate } = props;
-    const [testsData, setTestsData] = useState({});
+    const [testsData, setTestsData] = useState([]);
     const [testName, setTestName] = useState('');
     const [stepsForAI, setStepsForAI] = useState('');
     const [currentTest, setCurrentTest] = useState(null);
@@ -43,13 +43,25 @@ function TestsView(props) {
     const handleChange = (e, obj) => {
       obj.description = e.target.value;
       testsData(JSON.parse(JSON.stringify(testsData)));
-      localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
+      // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
+    };
+
+    const loadTestSuites = async (suiteName) => {
+        const tresponse = await fetch('/aiCopilotJs/testSuites');
+        const response = await tresponse.json();
+        const tData = [];
+        response.forEach(ts => {
+          const testSuite = JSON.parse(ts);
+          tData.push(testSuite);
+        });
+        setTestsData(tData);
+        setShowAddTestForm(false);
     };
 
     const playTest = async (test) => {
         let status = 'success';
-        for(let i=0; i<test.steps.length; i+=1) {
-            const tc = test.steps[i];
+        for(let i=0; i<test.commands.length; i+=1) {
+            const tc = test.commands[i];
             if(tc.command === 'open') {
                 if (history) {
                   history.push(tc.target);
@@ -59,9 +71,9 @@ function TestsView(props) {
                   navigateTo(tc.target);
                 }
                 executState[tc.id] = 'success';
-            } else if(tc.command === 'assert element present') {
+            } else if(tc.command === 'assertElementPresent') {
                 await waitForElement(tc.target);
-                const element = findElementByXPath(tc.target);
+                const element = findElementBySelector(tc.target);
                 if (element) {
                     executState[tc.id] = 'success';
                 } else {
@@ -100,52 +112,57 @@ function TestsView(props) {
     const generateSanityTests = () => {
       const tests = [];
       Object.keys(trainedData).forEach(path => {
-        const steps = [];
-        steps.push({
+        const commands = [];
+        commands.push({
             id: uuidv4(),
             command: 'open',
             target: `/${path}`,
             value: ''
         });
         Object.keys(trainedData[path]).filter(path => path !== 'description' && path !== 'name').forEach(xpath => {
-            steps.push({
+            commands.push({
                 id: uuidv4(),
-                command: 'assert element present',
-                target: xpath,
+                command: 'assertElementPresent',
+                target: `xpath=${xpath}`,
                 value: ''
             });
         });
         const test = {
             id: uuidv4(),
             name: `${path} - Sanity`,
-            steps,
+            commands,
         };
         tests.push(test);
       });
-      testsData['Sanity test suite'] = tests;
+      testsData.push({
+        "id": uuidv4(),
+        "version": "2.0",
+        "name": "Sanity test suite",
+        "tests": tests
+      });
       setTestsData(JSON.parse(JSON.stringify(testsData)));
-      localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
     };
 
     useEffect(() => {
-      const tData = localStorage.getItem('navGptTestsData');
-      if(tData) {
-          setTestsData(JSON.parse(tData));
-      }
+      // const tData = localStorage.getItem('navGptTestsData');
+      // if(tData) {
+      //     setTestsData(JSON.parse(tData));
+      // }
+      loadTestSuites();
     }, []);
 
     const playWholeSuite = async (e, suite) => {
         e.preventDefault();
         e.stopPropagation();
-        for(let i=0; i< suite.length; i += 1) {
-            await playTest(suite[i]);
+        for(let i=0; i< suite.tests.length; i += 1) {
+            await playTest(suite.tests[i]);
         }
     };
 
     const onCreateTestSuite = () => {
       testsData[testName] = [];
       setTestsData(JSON.parse(JSON.stringify((testsData))));
-      localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
+      // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
       setShowAddTestSuiteForm(false);
     };
 
@@ -172,10 +189,10 @@ function TestsView(props) {
         testsData[suiteName].push({
             id: uuidv4(),
             name: testName,
-            steps: res,
+            commands: res,
         });
         setTestsData(JSON.parse(JSON.stringify((testsData))));
-        localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
+        //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
         setShowAddTestForm(false);
     };
 
@@ -186,7 +203,7 @@ function TestsView(props) {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              testCase: testCase[0].steps,
+              testCase: testCase[0].commands,
             }), // body data type must match "Content-Type" header
             timeout: 300000
           });
@@ -194,25 +211,25 @@ function TestsView(props) {
         const testStrs = response[0].message.content.split('##########')
         testStrs.forEach(testStr => {
             if(testStr.trim().length) {
-                const steps = JSON.parse(testStr);
-                steps.forEach(step => {
-                    step.id = uuidv4();
+                const commands = JSON.parse(testStr);
+                commands.forEach(command => {
+                    command.id = uuidv4();
                 });
                 testsData[testCase[1]].push({
                     id: uuidv4(),
                     name: 'Validation test',
-                    steps,
+                    commands,
                 });
             }
         });
         setTestsData(JSON.parse(JSON.stringify((testsData))));
-        localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
+        //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
         setCurrentTest(null);
 
         // testsData[suiteName].push({
         //     id: uuidv4(),
         //     name: testName,
-        //     steps: res,
+        //     commands: res,
         // });
         // setTestsData(JSON.parse(JSON.stringify((testsData))));
         // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
@@ -224,19 +241,21 @@ function TestsView(props) {
             testsData[suite] = testsData[suite].filter(tt => tt.id !==  test.id);
         });
         setTestsData(JSON.parse(JSON.stringify((testsData))));
-        localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
+        //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
         setCurrentTest(null);
     };
 
-    const deleteStep = (test, step) => {
-        test[0].steps = test[0].steps.filter(st => st.id !== step.id);
+    const deleteStep = (test, command) => {
+        test[0].commands = test[0].commands.filter(st => st.id !== command.id);
         setTestsData(JSON.parse(JSON.stringify((testsData))));
-        localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
+        //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
     };
 
     const generateArticle = () => {
         //
     };
+
+    console.log(executState, testsData);
 
     return (
     <Box p={2} style={{backgroundColor: 'rgb(230, 230, 230)'}}>
@@ -245,7 +264,7 @@ function TestsView(props) {
           <Button style={{marginLeft: 8}} variant="contained" color="secondary">Record test</Button>
           <Button style={{marginLeft: 8}} variant="contained" color="secondary" onClick={() => setShowAddTestSuiteForm(true)}>Add</Button>
         </Box>
-         {showAddTestSuiteForm && <Paper sx={{padding: 2, marginTop: 1}}>
+         {showAddTestSuiteForm && <Paper style={{padding: 2, marginTop: 1}}>
           <Box pb={2} display="flex" alignItems="center">
             <Box width="20%">Name : </Box>
             <Box flexGrow={1}>
@@ -261,13 +280,13 @@ function TestsView(props) {
             </Box>
           </Box>
          </Paper>}
-         {testsData && !currentTest && Object.keys(testsData).map(testSuite => <Box key={testSuite} mt={1}>
+         {testsData && !currentTest && testsData.map(testSuite => <Box key={testSuite.name} mt={1}>
           <Accordion>
             <AccordionSummary
               expandIcon={<ExpandMoreIcon />}
             >
-              <Typography variant="h4">{testSuite}</Typography>
-              <IconButton onClick={e => playWholeSuite(e, testsData[testSuite])} aria-label="train">
+              <Typography variant="h4">{testSuite.name}</Typography>
+              <IconButton onClick={e => playWholeSuite(e, testSuite)} aria-label="train">
                  <PlayCircleOutlineIcon />
                </IconButton>
                 <IconButton onClick={() => setShowAddTestForm(true)} aria-label="train">
@@ -275,7 +294,7 @@ function TestsView(props) {
                 </IconButton>
             </AccordionSummary>
             <AccordionDetails>
-            {showAddTestForm && <Paper sx={{padding: 2, marginTop: 1}}>
+            {showAddTestForm && <Paper style={{padding: 2, marginTop: 1}}>
                 <Box pb={2} display="flex" alignItems="center">
                     <Box width="20%">Name : </Box>
                     <Box flexGrow={1}>
@@ -297,22 +316,22 @@ function TestsView(props) {
                     </Box>
                 </Box>
             </Paper>}
-            <Box>
-              {testsData[testSuite].map(test => {
-                 let sx;
+            <Box width="100%">
+              {testSuite.tests.map(test => {
+                 let style;
                  if (executState[test.id] === 'success') {
-                     sx = { bgcolor: 'success.main', color: 'success.contrastText' };
+                     style = classes.successStep;
                  } else if (executState[test.id] === 'fail') {
-                     sx = { bgcolor: 'error.main', color: 'error.contrastText' };
+                     style = classes.failedStep;
                  };
-                return (<Box sx={sx} onClick={() => setCurrentTest([test, testSuite])} className={classes.testName} p={1}>
+                return (<Box className={`${classes.testName} ${style}`} onClick={() => setCurrentTest([test, testSuite])} p={1}>
                     {test.name}
                   </Box>)})}
             </Box>
             </AccordionDetails>
           </Accordion>
          </Box>)}
-         {currentTest && <Paper sx={{marginTop: 1}} mt={1}>
+         {currentTest && <Paper style={{marginTop: 1}} mt={1}>
             <Box p={2} display="flex" justifyContent="space-between" alignItems="center">
                 <Box display="flex" alignItems="center">
                     <Typography variant="h5">
@@ -337,7 +356,7 @@ function TestsView(props) {
                 </Box>
             </Box>
             <TableContainer component={Paper}>
-                <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                <Table style={{ minWidth: 650 }} aria-label="simple table">
                     <TableHead>
                     <TableRow>
                         <TableCell>Command</TableCell>
@@ -347,15 +366,15 @@ function TestsView(props) {
                     </TableRow>
                     </TableHead>
                     <TableBody>
-                    {currentTest[0].steps.map((row) => {
-                        let sx;
+                    {currentTest[0].commands.map((row) => {
+                        let style;
                         if (executState[row.id] === 'success') {
-                            sx = { bgcolor: 'success.main', color: 'success.contrastText' };
+                            style = classes.successStep;
                         } else if (executState[row.id] === 'fail') {
-                            sx = { bgcolor: 'error.main', color: 'error.contrastText' };
+                            style = classes.failedStep;
                         };
 
-                        return <TableRow sx={sx}>
+                        return <TableRow className={style}>
                             <TableCell >{row.command}</TableCell>
                             <TableCell >{row.target}</TableCell>
                             <TableCell >{row.value}</TableCell>

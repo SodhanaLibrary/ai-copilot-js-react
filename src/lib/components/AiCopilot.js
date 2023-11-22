@@ -252,11 +252,10 @@ function AiCopilot(props) {
         hideBackdrop
       >
         <Box p={1} className={classes.automationBox}>
-          <Box display="flex" justifyContent="space-between" sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Box display="flex" justifyContent="space-between" style={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={tabValue} onChange={handleChange} aria-label="basic tabs example">
               <Tab label="Trained"  />
               <Tab label="Tests"  />
-              <Tab label="Navigation flows"  />
             </Tabs>
             <IconButton onClick={() => setOpenAutomation(false)} aria-label="train">
                 <CloseIcon />
@@ -265,7 +264,6 @@ function AiCopilot(props) {
 
           {tabValue === 0 && <TrainedDataView onChangeTrainedData={onChangeTrainedData} trainedData={trainData} />}
           {tabValue === 1 && <TestsView navigate={navigate} history={history} trainedData={trainData}/>}
-          {tabValue === 2 && <TrainedDataView trainedData={trainData} />}
         </Box>
       </Drawer>
     </Box>
@@ -274,12 +272,17 @@ function AiCopilot(props) {
 
 AiCopilot.propTypes = {
   navigate: PropTypes.function,
-  history: PropTypes.object
+  history: PropTypes.object,
+  components: PropTypes.object
 };
 
 AiCopilot.defaultProps = {
   navigate: null,
-  history: null
+  history: null,
+  components: {
+    Popover: Popover,
+    IconButton: Popover,
+  }
 };
 
 export default React.memo(AiCopilot);

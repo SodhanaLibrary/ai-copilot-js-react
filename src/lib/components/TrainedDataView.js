@@ -33,22 +33,24 @@ export default function TrainedDataView(props) {
               <Typography>{path}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-            <TextField size="small" label="name" onChange={e => handleNameChange(e, trainedData[path])} fullWidth value={trainedData[path].name} label="" variant="outlined" />
-            <TextField size="small" label="description" onChange={e => handleChange(e, trainedData[path])} fullWidth value={trainedData[path].description} label="" variant="outlined" />
-            <Box>
-              {Object.keys(trainedData[path]).filter(xpath => xpath !== 'description').map(xpath => <Box>
-                  <hr />
-                  <Box display="flex">
-                    <Box width={100}>xpath : </Box><Box>{xpath}</Box>
-                  </Box>
-                  <Box display="flex" pt={1}>
-                    <Box width={100}>description : </Box>
-                    <Box flexGrow={1}>
-                        <TextField size="small" fullWidth value={trainedData[path][xpath].description} onChange={e => handleChange(e, trainedData[path][xpath])} label="" variant="outlined" />
-                    </Box>
-                  </Box>
-              </Box>)}
-            </Box>
+              <Box display="flex" flexDirection="column" width="100%">
+                <TextField size="small" label="name" onChange={e => handleNameChange(e, trainedData[path])} fullWidth value={trainedData[path].name} label="" variant="outlined" />
+                <TextField size="small" label="description" onChange={e => handleChange(e, trainedData[path])} fullWidth value={trainedData[path].description} label="" variant="outlined" />
+                <Box>
+                  {Object.keys(trainedData[path]).filter(xpath => xpath !== 'description').map(xpath => <Box>
+                      <hr />
+                      <Box display="flex">
+                        <Box width={100}>xpath : </Box><Box>{xpath}</Box>
+                      </Box>
+                      <Box display="flex" pt={1}>
+                        <Box width={100}>description : </Box>
+                        <Box flexGrow={1}>
+                            <TextField size="small" fullWidth value={trainedData[path][xpath].description} onChange={e => handleChange(e, trainedData[path][xpath])} label="" variant="outlined" />
+                        </Box>
+                      </Box>
+                  </Box>)}
+                </Box>
+              </Box>
             </AccordionDetails>
           </Accordion>
          </Box>)}

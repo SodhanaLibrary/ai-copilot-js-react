@@ -27,12 +27,44 @@ export const findElementByXPath = (xpath) => {
   return result.singleNodeValue;
 };
 
-export const waitForElement = async (xpath, timeout = 3000) => {
+export const findElementById = (id) => {
+    return document.getElementById(id);
+};
+
+export const findElementByCss = (selector) => {
+    return document.querySelector(selector);
+};
+
+export const findElementBySelector = target => {
+  const targetStrs = target.split('=');
+  let tr = target.substring(6);
+  let findElement = findElementByXPath;
+  if (targetStrs[0] === 'id') {
+    findElement = findElementById;
+    tr = target.substring(3);
+  } else if (targetStrs[0] === 'css') {
+    findElement = findElementByCss;
+    tr = target.substring(4);
+  }
+  return findElement(tr);
+};
+
+export const waitForElement = async (target, timeout = 3000) => {
+    const targetStrs = target.split('=');
+    let tr = target.substring(6);
+    let findElement = findElementByXPath;
+    if (targetStrs[0] === 'id') {
+      findElement = findElementById;
+      tr = target.substring(3);
+    } else if (targetStrs[0] === 'css') {
+      findElement = findElementByCss;
+      tr = target.substring(4);
+    }
     const startTime = Date.now();
 
     return new Promise((resolve, reject) => {
       function checkElement() {
-        const element = findElementByXPath(xpath);
+        const element = findElement(tr);
         if (element) {
           // Element found, resolve the Promise with the element
           resolve(element);
@@ -216,14 +248,6 @@ export const generateXPathWithNearestParentId = (element) => {
   }
   return null; // No parent with an ID found
 }
-
-export const findElementById = (id) => {
-    return document.getElementById(id);
-};
-
-export const findElementByCss = (selector) => {
-    return document.querySelector(selector);
-};
 
 export const  findElementByAttribute = (attribute, value) => {
     const selector = `[${attribute}="${value}"]`;
