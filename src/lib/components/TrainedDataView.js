@@ -9,7 +9,6 @@ import AccordionDetails from '@material-ui/core/AccordionDetails';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
-
 // ----------------------------------------------------------------------
 
 export default function TrainedDataView(props) {
@@ -22,6 +21,17 @@ export default function TrainedDataView(props) {
     const handleNameChange = (e, obj) => {
       obj.name = e.target.value;
       onChangeTrainedData(JSON.parse(JSON.stringify(trainedData)));
+    };
+    const saveTrainedData = async () => {
+      const tresponse = await fetch('/aiCopilotJs/trainedData', {
+          method: "POST", // *GET, POST, PUT, DELETE, etc.
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(trainedData), // body data type must match "Content-Type" header
+          timeout: 300000
+        });
+      const response = await tresponse.json();
     };
     return (
     <Box p={2} style={{backgroundColor: 'rgb(230, 230, 230)'}}>
@@ -54,6 +64,11 @@ export default function TrainedDataView(props) {
             </AccordionDetails>
           </Accordion>
          </Box>)}
+         <Box>
+           <Button variant="contained" color="primary" onClick={saveTrainedData}>
+             Save
+           </Button>
+         </Box>
     </Box>
   );
 }

@@ -44,6 +44,7 @@ function TestsView(props) {
   } = props;
   const [testsData, setTestsData] = (0, _react.useState)([]);
   const [testName, setTestName] = (0, _react.useState)('');
+  const [testDirty, setTestDirty] = (0, _react.useState)(false);
   const [stepsForAI, setStepsForAI] = (0, _react.useState)('');
   const [currentTest, setCurrentTest] = (0, _react.useState)(null);
   const [showAddTestSuiteForm, setShowAddTestSuiteForm] = (0, _react.useState)(false);
@@ -56,6 +57,27 @@ function TestsView(props) {
     // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
   };
 
+  const saveTestSuite = async testSuite => {
+    const tresponse = await fetch('/aiCopilotJs/testSuites', {
+      method: "POST",
+      // *GET, POST, PUT, DELETE, etc.
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: testSuite.name,
+        content: testSuite
+      }),
+      // body data type must match "Content-Type" header
+      timeout: 300000
+    });
+    const response = await tresponse.json();
+  };
+  const saveAllTestSuites = async () => {
+    testsData.forEach(ts => {
+      saveTestSuite(ts);
+    });
+  };
   const loadTestSuites = async suiteName => {
     const tresponse = await fetch('/aiCopilotJs/testSuites');
     const response = await tresponse.json();
@@ -142,12 +164,14 @@ function TestsView(props) {
       };
       tests.push(test);
     });
-    testsData.push({
+    const sanitySuite = {
       "id": (0, _uuid.v4)(),
       "version": "2.0",
       "name": "Sanity test suite",
       "tests": tests
-    });
+    };
+    testsData.push(sanitySuite);
+    saveTestSuite(sanitySuite);
     setTestsData(JSON.parse(JSON.stringify(testsData)));
   };
   (0, _react.useEffect)(() => {
@@ -165,7 +189,14 @@ function TestsView(props) {
     }
   };
   const onCreateTestSuite = () => {
-    testsData[testName] = [];
+    const newSuite = {
+      "id": (0, _uuid.v4)(),
+      "version": "2.0",
+      "name": testName,
+      "tests": []
+    };
+    testsData.push(newSuite);
+    saveTestSuite(newSuite);
     setTestsData(JSON.parse(JSON.stringify(testsData)));
     // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
     setShowAddTestSuiteForm(false);
@@ -246,22 +277,31 @@ function TestsView(props) {
   };
 
   const deleteTest = test => {
-    Object.keys(testsData).forEach(suite => {
-      testsData[suite] = testsData[suite].filter(tt => tt.id !== test.id);
+    testsData.forEach(suite => {
+      if (suite.tests.find(ts => ts.id === test.id)) {
+        suite.tests = suite.tests.filter(ts => ts.id !== test.id);
+        setTestsData(JSON.parse(JSON.stringify(testsData)));
+        saveTestSuite(suite);
+      }
     });
-    setTestsData(JSON.parse(JSON.stringify(testsData)));
-    //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
     setCurrentTest(null);
   };
   const deleteStep = (test, command) => {
     test[0].commands = test[0].commands.filter(st => st.id !== command.id);
     setTestsData(JSON.parse(JSON.stringify(testsData)));
+    setTestDirty(test);
     //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
   };
 
   const generateArticle = () => {
     //
   };
+  (0, _react.useEffect)(() => {
+    if (!currentTest && testDirty) {
+      saveTestSuite(testDirty[1]);
+      setTestDirty(false);
+    }
+  }, [currentTest]);
   console.log(executState, testsData);
   return /*#__PURE__*/_react.default.createElement(_Box.default, {
     p: 2,
@@ -276,12 +316,6 @@ function TestsView(props) {
       marginLeft: 8
     },
     variant: "contained",
-    color: "secondary"
-  }, "Record test"), /*#__PURE__*/_react.default.createElement(_Button.default, {
-    style: {
-      marginLeft: 8
-    },
-    variant: "contained",
     color: "secondary",
     onClick: () => setShowAddTestSuiteForm(true)
   }, "Add")), showAddTestSuiteForm && /*#__PURE__*/_react.default.createElement(_Paper.default, {
@@ -290,7 +324,7 @@ function TestsView(props) {
       marginTop: 1
     }
   }, /*#__PURE__*/_react.default.createElement(_Box.default, {
-    pb: 2,
+    p: 2,
     display: "flex",
     alignItems: "center"
   }, /*#__PURE__*/_react.default.createElement(_Box.default, {
@@ -304,8 +338,7 @@ function TestsView(props) {
     label: "",
     variant: "outlined"
   }))), /*#__PURE__*/_react.default.createElement(_Box.default, {
-    mt: 1,
-    pt: 1,
+    p: 1,
     display: "flex",
     justifyContent: "space-between"
   }, /*#__PURE__*/_react.default.createElement(_Button.default, {
@@ -448,14 +481,7 @@ function TestsView(props) {
       onClick: () => deleteStep(currentTest, row),
       "aria-label": "train"
     }, /*#__PURE__*/_react.default.createElement(_Delete.default, null))));
-  })))), /*#__PURE__*/_react.default.createElement(_Box.default, {
-    pl: 1,
-    mt: 1,
-    pb: 2
-  }, /*#__PURE__*/_react.default.createElement(_Button.default, {
-    variant: "contained",
-    onClick: () => createValidationTests(currentTest)
-  }, "Create Validation Tests"))));
+  }))))));
 }
 TestsView.propTypes = {
   navigate: _propTypes.default.function,

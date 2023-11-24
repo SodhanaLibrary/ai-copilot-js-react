@@ -169,8 +169,9 @@ function AiCopilot(props) {
     setAnchorOrigin(aOrigin);
     setXpath((0, _aiCopilotUtils.generateXPathWithNearestParentId)(anchorEl));
   }, [anchorEl]);
-  (0, _react.useEffect)(() => {
-    const data = localStorage.getItem('navGptTrainData');
+  const loadTrainedData = async () => {
+    const tresponse = await fetch('/aiCopilotJs/trainedData');
+    const data = await tresponse.json();
     if (data && data.length) {
       const tData = JSON.parse(data);
       Object.keys(tData).forEach(page => {
@@ -182,6 +183,9 @@ function AiCopilot(props) {
       });
       setTrainData(tData);
     }
+  };
+  (0, _react.useEffect)(() => {
+    loadTrainedData();
   }, []);
   const highlights = (0, _aiCopilotUtils.getElementHighlights)(anchorEl);
   const handleChange = (event, newValue) => {

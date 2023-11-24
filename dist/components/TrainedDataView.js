@@ -31,6 +31,19 @@ function TrainedDataView(props) {
     obj.name = e.target.value;
     onChangeTrainedData(JSON.parse(JSON.stringify(trainedData)));
   };
+  const saveTrainedData = async () => {
+    const tresponse = await fetch('/aiCopilotJs/trainedData', {
+      method: "POST",
+      // *GET, POST, PUT, DELETE, etc.
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(trainedData),
+      // body data type must match "Content-Type" header
+      timeout: 300000
+    });
+    const response = await tresponse.json();
+  };
   return /*#__PURE__*/_react.default.createElement(_Box.default, {
     p: 2,
     style: {
@@ -79,5 +92,9 @@ function TrainedDataView(props) {
     onChange: e => handleChange(e, trainedData[path][xpath]),
     label: "",
     variant: "outlined"
-  }))))))))))));
+  }))))))))))), /*#__PURE__*/_react.default.createElement(_Box.default, null, /*#__PURE__*/_react.default.createElement(_Button.default, {
+    variant: "contained",
+    color: "primary",
+    onClick: saveTrainedData
+  }, "Save")));
 }

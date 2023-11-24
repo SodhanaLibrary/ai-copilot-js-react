@@ -33,6 +33,7 @@ function TestsView(props) {
     const { trainedData, history, navigate } = props;
     const [testsData, setTestsData] = useState([]);
     const [testName, setTestName] = useState('');
+    const [testDirty, setTestDirty] = useState(false);
     const [stepsForAI, setStepsForAI] = useState('');
     const [currentTest, setCurrentTest] = useState(null);
     const [showAddTestSuiteForm, setShowAddTestSuiteForm] = useState(false);
@@ -44,6 +45,27 @@ function TestsView(props) {
       obj.description = e.target.value;
       testsData(JSON.parse(JSON.stringify(testsData)));
       // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
+    };
+
+    const saveTestSuite = async testSuite => {
+        const tresponse = await fetch('/aiCopilotJs/testSuites', {
+            method: "POST", // *GET, POST, PUT, DELETE, etc.
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: testSuite.name,
+              content: testSuite,
+            }), // body data type must match "Content-Type" header
+            timeout: 300000
+          });
+        const response = await tresponse.json();
+    };
+
+    const saveAllTestSuites = async () => {
+        testsData.forEach(ts => {
+           saveTestSuite(ts);
+        });
     };
 
     const loadTestSuites = async (suiteName) => {
@@ -134,12 +156,14 @@ function TestsView(props) {
         };
         tests.push(test);
       });
-      testsData.push({
+      const sanitySuite = {
         "id": uuidv4(),
         "version": "2.0",
         "name": "Sanity test suite",
         "tests": tests
-      });
+      };
+      testsData.push(sanitySuite);
+      saveTestSuite(sanitySuite);
       setTestsData(JSON.parse(JSON.stringify(testsData)));
     };
 
@@ -160,7 +184,14 @@ function TestsView(props) {
     };
 
     const onCreateTestSuite = () => {
-      testsData[testName] = [];
+      const newSuite = {
+        "id": uuidv4(),
+        "version": "2.0",
+        "name": testName,
+        "tests": []
+      };
+      testsData.push(newSuite);
+      saveTestSuite(newSuite);
       setTestsData(JSON.parse(JSON.stringify((testsData))));
       // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
       setShowAddTestSuiteForm(false);
@@ -237,17 +268,20 @@ function TestsView(props) {
     };
 
     const deleteTest = test => {
-        Object.keys(testsData).forEach(suite => {
-            testsData[suite] = testsData[suite].filter(tt => tt.id !==  test.id);
+        testsData.forEach(suite => {
+            if(suite.tests.find(ts => ts.id === test.id)) {
+                suite.tests = suite.tests.filter(ts => ts.id !== test.id);
+                setTestsData(JSON.parse(JSON.stringify((testsData))));
+                saveTestSuite(suite);
+            }
         });
-        setTestsData(JSON.parse(JSON.stringify((testsData))));
-        //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
         setCurrentTest(null);
     };
 
     const deleteStep = (test, command) => {
         test[0].commands = test[0].commands.filter(st => st.id !== command.id);
         setTestsData(JSON.parse(JSON.stringify((testsData))));
+        setTestDirty(test);
         //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
     };
 
@@ -255,23 +289,29 @@ function TestsView(props) {
         //
     };
 
+    useEffect(() => {
+      if(!currentTest && testDirty) {
+        saveTestSuite(testDirty[1]);
+        setTestDirty(false);
+      }
+    }, [currentTest]);
+
     console.log(executState, testsData);
 
     return (
     <Box p={2} style={{backgroundColor: 'rgb(230, 230, 230)'}}>
         <Box>
           <Button variant="contained" onClick={generateSanityTests}>Generate sanity test</Button>
-          <Button style={{marginLeft: 8}} variant="contained" color="secondary">Record test</Button>
           <Button style={{marginLeft: 8}} variant="contained" color="secondary" onClick={() => setShowAddTestSuiteForm(true)}>Add</Button>
         </Box>
          {showAddTestSuiteForm && <Paper style={{padding: 2, marginTop: 1}}>
-          <Box pb={2} display="flex" alignItems="center">
+          <Box p={2} display="flex" alignItems="center">
             <Box width="20%">Name : </Box>
             <Box flexGrow={1}>
               <TextField fullWidth value={testName} onChange={e => setTestName(e.target.value)} label="" variant="outlined" />
             </Box>
           </Box>
-          <Box mt={1} pt={1} display="flex" justifyContent="space-between">
+          <Box p={1} display="flex" justifyContent="space-between">
             <Button variant="contained" onClick={() => setShowAddTestSuiteForm(false)}>Cancel</Button>
             <Box display="flex">
               <Button disabled={testName.length === 0} variant="contained" className={classes.ftBtn} color="primary" onClick={onCreateTestSuite}>
@@ -388,9 +428,6 @@ function TestsView(props) {
                     </TableBody>
                 </Table>
             </TableContainer>
-            <Box pl={1} mt={1} pb={2}>
-                <Button variant="contained" onClick={() => createValidationTests(currentTest)}>Create Validation Tests</Button>
-            </Box>
          </Paper>}
     </Box>
   );
