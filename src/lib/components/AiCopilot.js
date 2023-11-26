@@ -12,6 +12,7 @@ import TrainIcon from '@material-ui/icons/TrainOutlined';
 import PhotoIcon from '@material-ui/icons/Photo';
 import CloseIcon from '@material-ui/icons/Close';
 import PropTypes from 'prop-types';
+import { v4 as uuidv4 } from 'uuid';
 import TestsView from './TestsView';
 import useStyles from './AiCopilot.jss';
 import TrainedDataView from './TrainedDataView';
@@ -49,38 +50,38 @@ function AiCopilot(props) {
     if(!pathTrainData) {
       return '';
     }
-    const paths = Object.keys(pathTrainData);
-    for (let i = 0; i < paths.length; i+=1) {
+    for (let i = 0; i < pathTrainData.length; i+=1) {
       if (
-        pathTrainData[paths[i]][xpath] &&
-        pathTrainData[paths[i]][xpath].description &&
-        pathTrainData[paths[i]][xpath].description.length
+        pathTrainData[i].elements[xpath] &&
+        pathTrainData[i].elements[xpath].description &&
+        pathTrainData[i].elements[xpath].description.length
       ) {
-        return pathTrainData[paths[i]][xpath].description;
+        return pathTrainData[i].elements[xpath].description;
       }
     }
     return '';
   };
+
   const onClickTrain = () => {
     const elements = findElementsWithOnClick();
     const headerElements = getHeaderElementsWithVisibleText();
     elements.push(...headerElements);
     const path = getCurrentPath();
-    const pathTrainData = trainData[path];
+    const pathTrainData = trainData.find(tdata => tdata.path === path);
     let foundElm = false;
     elements.filter(elm => isElementVisible(elm)).every(elm => {
       const xpath = generateXPathWithNearestParentId(elm);
       if(
         (!xpath || xpath.length === 0) ||
-        (pathTrainData && (pathTrainData[xpath] && pathTrainData[xpath].trained))
+        (pathTrainData && (pathTrainData.elements[xpath] && pathTrainData.elements[xpath].trained))
       ) {
         return true;
       }
       if(
         pathTrainData &&
-        pathTrainData[xpath] &&
-        pathTrainData[xpath].description.length) {
-        setDescription(pathTrainData[xpath].description || '');
+        pathTrainData.elements[xpath] &&
+        pathTrainData.elements[xpath].description.length) {
+        setDescription(pathTrainData.elements[xpath].description || '');
       } else {
         setDescription(getDescriptionFromOtherPaths(trainData, xpath));
       }
@@ -92,6 +93,7 @@ function AiCopilot(props) {
       setAnchorEl(null);
     }
   };
+
   const onClickBugReport = () => {
     setOpenAutomation(true);
   };
@@ -104,17 +106,25 @@ function AiCopilot(props) {
     const xpath = generateXPathWithNearestParentId(anchorEl);
     const query = generateCssSelector(anchorEl);
     const path = getCurrentPath();
-    const pathTrainData = trainData[path] || {};
-    pathTrainData[xpath] = {
+    let pathTrainData = trainData.find(page => page.path === path);
+    if(!pathTrainData) {
+      pathTrainData = {
+        path,
+        name: path,
+        description: '',
+        elements: {},
+        uuid: uuidv4()
+      };
+      trainData.push(pathTrainData);
+    }
+    pathTrainData.elements[xpath] = {
       xpath,
       description,
       cssSelector: query,
       skipped,
       trained: true,
     };
-    console.log('Trained data', xpath, pathTrainData[xpath]);
-    trainData[path] = pathTrainData;
-    localStorage.setItem('navGptTrainData', JSON.stringify(trainData));
+    console.log('Trained data', xpath, pathTrainData.elements[xpath]);
     setTrainData(JSON.parse(JSON.stringify(trainData)));
     setDescription('');
     setTimeout(() => {
@@ -124,7 +134,6 @@ function AiCopilot(props) {
 
   const onChangeTrainedData = trainedData => {
     setTrainData(trainedData);
-    localStorage.setItem('navGptTrainData', JSON.stringify(trainedData));
   };
 
   useEffect(() => {
@@ -184,11 +193,9 @@ function AiCopilot(props) {
     const data = await tresponse.json();
     if(data && data.length) {
       const tData = JSON.parse(data);
-      Object.keys(tData).forEach(page => {
-        Object.keys(tData[page]).forEach(xpath => {
-          if(typeof tData[page][xpath] === 'object') {
-            tData[page][xpath].trained = false;
-          }
+      tData.forEach(page => {
+        Object.keys(page.elements).forEach(xpath => {
+          page.elements[xpath].trained = false;
         });
       });
       setTrainData(tData);

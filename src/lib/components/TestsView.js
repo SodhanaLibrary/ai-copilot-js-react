@@ -44,7 +44,6 @@ function TestsView(props) {
     const handleChange = (e, obj) => {
       obj.description = e.target.value;
       testsData(JSON.parse(JSON.stringify(testsData)));
-      // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
     };
 
     const saveTestSuite = async testSuite => {
@@ -168,10 +167,6 @@ function TestsView(props) {
     };
 
     useEffect(() => {
-      // const tData = localStorage.getItem('navGptTestsData');
-      // if(tData) {
-      //     setTestsData(JSON.parse(tData));
-      // }
       loadTestSuites();
     }, []);
 
@@ -193,7 +188,6 @@ function TestsView(props) {
       testsData.push(newSuite);
       saveTestSuite(newSuite);
       setTestsData(JSON.parse(JSON.stringify((testsData))));
-      // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
       setShowAddTestSuiteForm(false);
     };
 
@@ -223,7 +217,6 @@ function TestsView(props) {
             commands: res,
         });
         setTestsData(JSON.parse(JSON.stringify((testsData))));
-        //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
         setShowAddTestForm(false);
     };
 
@@ -254,17 +247,7 @@ function TestsView(props) {
             }
         });
         setTestsData(JSON.parse(JSON.stringify((testsData))));
-        //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
         setCurrentTest(null);
-
-        // testsData[suiteName].push({
-        //     id: uuidv4(),
-        //     name: testName,
-        //     commands: res,
-        // });
-        // setTestsData(JSON.parse(JSON.stringify((testsData))));
-        // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
-        // setShowAddTestForm(false);
     };
 
     const deleteTest = test => {
@@ -278,11 +261,25 @@ function TestsView(props) {
         setCurrentTest(null);
     };
 
+    const deleteTestSuite = async testSuite => {
+        setTestsData(testsData.filter(suite => suite.id !== testSuite.id));
+        const tresponse = await fetch('/aiCopilotJs/testSuites', {
+            method: "DELETE", // *GET, POST, PUT, DELETE, etc.
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: testSuite.name
+            }), // body data type must match "Content-Type" header
+            timeout: 300000
+          });
+        const response = await tresponse.json();
+    };
+
     const deleteStep = (test, command) => {
         test[0].commands = test[0].commands.filter(st => st.id !== command.id);
         setTestsData(JSON.parse(JSON.stringify((testsData))));
         setTestDirty(test);
-        //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
     };
 
     const generateArticle = () => {
@@ -332,41 +329,48 @@ function TestsView(props) {
                 <IconButton onClick={() => setShowAddTestForm(true)} aria-label="train">
                     <AddCircleOutlineOutlined />
                 </IconButton>
+                <Tooltip title="Delete test suite">
+                    <IconButton onClick={() => deleteTestSuite(testSuite)} aria-label="train">
+                         <DeleteIcon />
+                    </IconButton>
+                </Tooltip>
             </AccordionSummary>
             <AccordionDetails>
-            {showAddTestForm && <Paper style={{padding: 2, marginTop: 1}}>
-                <Box pb={2} display="flex" alignItems="center">
-                    <Box width="20%">Name : </Box>
-                    <Box flexGrow={1}>
-                       <TextField fullWidth value={testName} onChange={e => setTestName(e.target.value)} label="" variant="outlined" />
-                    </Box>
-                </Box>
-                <Box pb={2} display="flex" alignItems="center">
-                    <Box width="20%">Steps for AI : </Box>
-                    <Box flexGrow={1}>
-                       <TextField minRows={5} multiline fullWidth value={stepsForAI} onChange={e => setStepsForAI(e.target.value)} label="" variant="outlined" />
-                    </Box>
-                </Box>
-                <Box mt={1} pt={1} display="flex" justifyContent="space-between">
-                    <Button variant="contained" onClick={() => setShowAddTestForm(false)}>Cancel</Button>
-                    <Box display="flex">
-                    <Button disabled={testName.length === 0 || stepsForAI.length === 0} variant="contained" className={classes.ftBtn} color="primary" onClick={() => onCreateTest(testSuite)}>
-                        Save
-                    </Button>
-                    </Box>
-                </Box>
-            </Paper>}
             <Box width="100%">
-              {testSuite.tests.map(test => {
-                 let style;
-                 if (executState[test.id] === 'success') {
-                     style = classes.successStep;
-                 } else if (executState[test.id] === 'fail') {
-                     style = classes.failedStep;
-                 };
-                return (<Box className={`${classes.testName} ${style}`} onClick={() => setCurrentTest([test, testSuite])} p={1}>
-                    {test.name}
-                  </Box>)})}
+              {showAddTestForm && <Paper style={{padding: 16, marginTop: 8}}>
+                  <Box pb={2} display="flex" alignItems="center">
+                      <Box width="20%">Name : </Box>
+                      <Box flexGrow={1}>
+                         <TextField fullWidth value={testName} onChange={e => setTestName(e.target.value)} label="" variant="outlined" />
+                      </Box>
+                  </Box>
+                  <Box pb={2} display="flex" alignItems="center">
+                      <Box width="20%">Steps for AI : </Box>
+                      <Box flexGrow={1}>
+                         <TextField minRows={5} multiline fullWidth value={stepsForAI} onChange={e => setStepsForAI(e.target.value)} label="" variant="outlined" />
+                      </Box>
+                  </Box>
+                  <Box mt={1} pt={1} display="flex" justifyContent="space-between">
+                      <Button variant="contained" onClick={() => setShowAddTestForm(false)}>Cancel</Button>
+                      <Box display="flex">
+                      <Button disabled={testName.length === 0 || stepsForAI.length === 0} variant="contained" className={classes.ftBtn} color="primary" onClick={() => onCreateTest(testSuite)}>
+                          Save
+                      </Button>
+                      </Box>
+                  </Box>
+              </Paper>}
+              <Box width="100%">
+                {testSuite.tests.map(test => {
+                   let style;
+                   if (executState[test.id] === 'success') {
+                       style = classes.successStep;
+                   } else if (executState[test.id] === 'fail') {
+                       style = classes.failedStep;
+                   };
+                  return (<Box className={`${classes.testName} ${style}`} onClick={() => setCurrentTest([test, testSuite])} p={1}>
+                      {test.name}
+                    </Box>)})}
+              </Box>
             </Box>
             </AccordionDetails>
           </Accordion>
