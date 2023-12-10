@@ -5,23 +5,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _react = _interopRequireWildcard(require("react"));
-var _Box = _interopRequireDefault(require("@material-ui/core/Box"));
-var _TextField = _interopRequireDefault(require("@material-ui/core/TextField"));
-var _Button = _interopRequireDefault(require("@material-ui/core/Button"));
-var _Accordion = _interopRequireDefault(require("@material-ui/core/Accordion"));
-var _AccordionSummary = _interopRequireDefault(require("@material-ui/core/AccordionSummary"));
-var _AccordionDetails = _interopRequireDefault(require("@material-ui/core/AccordionDetails"));
-var _Typography = _interopRequireDefault(require("@material-ui/core/Typography"));
-var _Tooltip = _interopRequireDefault(require("@material-ui/core/Tooltip"));
+var _Accordion = _interopRequireDefault(require("./supported/Accordion"));
+var _AccordionSummary = _interopRequireDefault(require("./supported/AccordionSummary"));
+var _AccordionDetails = _interopRequireDefault(require("./supported/AccordionDetails"));
 var _ExpandMore = _interopRequireDefault(require("@material-ui/icons/ExpandMore"));
-var _Table = _interopRequireDefault(require("@material-ui/core/Table"));
-var _TableBody = _interopRequireDefault(require("@material-ui/core/TableBody"));
-var _TableCell = _interopRequireDefault(require("@material-ui/core/TableCell"));
-var _TableContainer = _interopRequireDefault(require("@material-ui/core/TableContainer"));
-var _TableHead = _interopRequireDefault(require("@material-ui/core/TableHead"));
-var _TableRow = _interopRequireDefault(require("@material-ui/core/TableRow"));
-var _Paper = _interopRequireDefault(require("@material-ui/core/Paper"));
-var _IconButton = _interopRequireDefault(require("@material-ui/core/IconButton"));
+var _IconButton = _interopRequireDefault(require("./supported/IconButton"));
 var _Close = _interopRequireDefault(require("@material-ui/icons/Close"));
 var _Delete = _interopRequireDefault(require("@material-ui/icons/Delete"));
 var _PlayCircleOutline = _interopRequireDefault(require("@material-ui/icons/PlayCircleOutline"));
@@ -29,6 +17,17 @@ var _AddCircleOutlineOutlined = _interopRequireDefault(require("@material-ui/ico
 var _Assignment = _interopRequireDefault(require("@material-ui/icons/Assignment"));
 var _propTypes = _interopRequireDefault(require("prop-types"));
 var _uuid = require("uuid");
+var _Typography = _interopRequireDefault(require("./supported/Typography"));
+var _Button = _interopRequireDefault(require("./supported/Button"));
+var _TextField = _interopRequireDefault(require("./supported/TextField"));
+var _Box = _interopRequireDefault(require("./supported/Box"));
+var _Table = _interopRequireDefault(require("./supported/Table"));
+var _TableBody = _interopRequireDefault(require("./supported/TableBody"));
+var _TableCell = _interopRequireDefault(require("./supported/TableCell"));
+var _TableContainer = _interopRequireDefault(require("./supported/TableContainer"));
+var _TableHead = _interopRequireDefault(require("./supported/TableHead"));
+var _TableRow = _interopRequireDefault(require("./supported/TableRow"));
+var _Tooltip = _interopRequireDefault(require("./supported/Tooltip"));
 var _aiCopilotUtils = require("./aiCopilotUtils");
 var _TestsView = _interopRequireDefault(require("./TestsView.jss"));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -54,9 +53,7 @@ function TestsView(props) {
   const handleChange = (e, obj) => {
     obj.description = e.target.value;
     testsData(JSON.parse(JSON.stringify(testsData)));
-    // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
   };
-
   const saveTestSuite = async testSuite => {
     const tresponse = await fetch('/aiCopilotJs/testSuites', {
       method: "POST",
@@ -175,10 +172,6 @@ function TestsView(props) {
     setTestsData(JSON.parse(JSON.stringify(testsData)));
   };
   (0, _react.useEffect)(() => {
-    // const tData = localStorage.getItem('navGptTestsData');
-    // if(tData) {
-    //     setTestsData(JSON.parse(tData));
-    // }
     loadTestSuites();
   }, []);
   const playWholeSuite = async (e, suite) => {
@@ -198,7 +191,6 @@ function TestsView(props) {
     testsData.push(newSuite);
     saveTestSuite(newSuite);
     setTestsData(JSON.parse(JSON.stringify(testsData)));
-    // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
     setShowAddTestSuiteForm(false);
   };
   const onCreateTest = async suiteName => {
@@ -231,7 +223,6 @@ function TestsView(props) {
       commands: res
     });
     setTestsData(JSON.parse(JSON.stringify(testsData)));
-    //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
     setShowAddTestForm(false);
   };
   const createValidationTests = async testCase => {
@@ -263,19 +254,8 @@ function TestsView(props) {
       }
     });
     setTestsData(JSON.parse(JSON.stringify(testsData)));
-    //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
     setCurrentTest(null);
-
-    // testsData[suiteName].push({
-    //     id: uuidv4(),
-    //     name: testName,
-    //     commands: res,
-    // });
-    // setTestsData(JSON.parse(JSON.stringify((testsData))));
-    // localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
-    // setShowAddTestForm(false);
   };
-
   const deleteTest = test => {
     testsData.forEach(suite => {
       if (suite.tests.find(ts => ts.id === test.id)) {
@@ -286,13 +266,27 @@ function TestsView(props) {
     });
     setCurrentTest(null);
   };
+  const deleteTestSuite = async testSuite => {
+    setTestsData(testsData.filter(suite => suite.id !== testSuite.id));
+    const tresponse = await fetch('/aiCopilotJs/testSuites', {
+      method: "DELETE",
+      // *GET, POST, PUT, DELETE, etc.
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: testSuite.name
+      }),
+      // body data type must match "Content-Type" header
+      timeout: 300000
+    });
+    const response = await tresponse.json();
+  };
   const deleteStep = (test, command) => {
     test[0].commands = test[0].commands.filter(st => st.id !== command.id);
     setTestsData(JSON.parse(JSON.stringify(testsData)));
     setTestDirty(test);
-    //localStorage.setItem('navGptTestsData', JSON.stringify(testsData));
   };
-
   const generateArticle = () => {
     //
   };
@@ -318,7 +312,7 @@ function TestsView(props) {
     variant: "contained",
     color: "secondary",
     onClick: () => setShowAddTestSuiteForm(true)
-  }, "Add")), showAddTestSuiteForm && /*#__PURE__*/_react.default.createElement(_Paper.default, {
+  }, "Add")), showAddTestSuiteForm && /*#__PURE__*/_react.default.createElement(_Box.default, {
     style: {
       padding: 2,
       marginTop: 1
@@ -365,10 +359,17 @@ function TestsView(props) {
   }, /*#__PURE__*/_react.default.createElement(_PlayCircleOutline.default, null)), /*#__PURE__*/_react.default.createElement(_IconButton.default, {
     onClick: () => setShowAddTestForm(true),
     "aria-label": "train"
-  }, /*#__PURE__*/_react.default.createElement(_AddCircleOutlineOutlined.default, null))), /*#__PURE__*/_react.default.createElement(_AccordionDetails.default, null, showAddTestForm && /*#__PURE__*/_react.default.createElement(_Paper.default, {
+  }, /*#__PURE__*/_react.default.createElement(_AddCircleOutlineOutlined.default, null)), /*#__PURE__*/_react.default.createElement(_Tooltip.default, {
+    title: "Delete test suite"
+  }, /*#__PURE__*/_react.default.createElement(_IconButton.default, {
+    onClick: () => deleteTestSuite(testSuite),
+    "aria-label": "train"
+  }, /*#__PURE__*/_react.default.createElement(_Delete.default, null)))), /*#__PURE__*/_react.default.createElement(_AccordionDetails.default, null, /*#__PURE__*/_react.default.createElement(_Box.default, {
+    width: "100%"
+  }, showAddTestForm && /*#__PURE__*/_react.default.createElement(_Box.default, {
     style: {
-      padding: 2,
-      marginTop: 1
+      padding: 16,
+      marginTop: 8
     }
   }, /*#__PURE__*/_react.default.createElement(_Box.default, {
     pb: 2,
@@ -431,7 +432,7 @@ function TestsView(props) {
       onClick: () => setCurrentTest([test, testSuite]),
       p: 1
     }, test.name);
-  })))))), currentTest && /*#__PURE__*/_react.default.createElement(_Paper.default, {
+  }))))))), currentTest && /*#__PURE__*/_react.default.createElement(_Box.default, {
     style: {
       marginTop: 1
     },
@@ -461,7 +462,7 @@ function TestsView(props) {
     onClick: () => setCurrentTest(null),
     "aria-label": "train"
   }, /*#__PURE__*/_react.default.createElement(_Close.default, null)))), /*#__PURE__*/_react.default.createElement(_TableContainer.default, {
-    component: _Paper.default
+    component: _Box.default
   }, /*#__PURE__*/_react.default.createElement(_Table.default, {
     style: {
       minWidth: 650

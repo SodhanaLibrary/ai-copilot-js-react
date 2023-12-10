@@ -6,21 +6,21 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 var _react = _interopRequireWildcard(require("react"));
 var _reactDom = require("react-dom");
-var _Popover = _interopRequireDefault(require("@material-ui/core/Popover"));
-var _IconButton = _interopRequireDefault(require("@material-ui/core/IconButton"));
-var _Button = _interopRequireDefault(require("@material-ui/core/Button"));
-var _TextField = _interopRequireDefault(require("@material-ui/core/TextField"));
-var _Drawer = _interopRequireDefault(require("@material-ui/core/Drawer"));
-var _Box = _interopRequireDefault(require("@material-ui/core/Box"));
-var _Tabs = _interopRequireDefault(require("@material-ui/core/Tabs"));
-var _Tab = _interopRequireDefault(require("@material-ui/core/Tab"));
 var _TrainOutlined = _interopRequireDefault(require("@material-ui/icons/TrainOutlined"));
 var _Photo = _interopRequireDefault(require("@material-ui/icons/Photo"));
 var _Close = _interopRequireDefault(require("@material-ui/icons/Close"));
 var _propTypes = _interopRequireDefault(require("prop-types"));
+var _uuid = require("uuid");
 var _TestsView = _interopRequireDefault(require("./TestsView"));
 var _AiCopilot = _interopRequireDefault(require("./AiCopilot.jss"));
 var _TrainedDataView = _interopRequireDefault(require("./TrainedDataView"));
+var _Button = _interopRequireDefault(require("./supported/Button"));
+var _TextField = _interopRequireDefault(require("./supported/TextField"));
+var _Box = _interopRequireDefault(require("./supported/Box"));
+var _Tabs = _interopRequireDefault(require("./supported/Tabs"));
+var _Tab = _interopRequireDefault(require("./supported/Tab"));
+var _Drawer = _interopRequireDefault(require("./supported/Drawer"));
+var _IconButton = _interopRequireDefault(require("./supported/IconButton"));
 var _aiCopilotUtils = require("./aiCopilotUtils");
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
@@ -32,29 +32,26 @@ function AiCopilot(props) {
   } = props;
   const [anchorEl, setAnchorEl] = _react.default.useState(null);
   const [openAutomation, setOpenAutomation] = _react.default.useState(false);
-  const [trainData, setTrainData] = _react.default.useState({});
+  const [trainData, setTrainData] = _react.default.useState([]);
   const [description, setDescription] = _react.default.useState('');
   const [tabValue, setTabValue] = _react.default.useState(0);
   const [xpath, setXpath] = _react.default.useState('');
-  const [anchorOrigin, setAnchorOrigin] = _react.default.useState({
-    vertical: 'bottom',
-    horizontal: 'right'
-  });
-  const [transformOrigin, setTransformOrigin] = _react.default.useState({
-    vertical: 'top',
-    horizontal: 'left'
-  });
   const [backdropDimensions, setBackdropDimensions] = _react.default.useState([]);
+  const [popDimensions, setPopDimensions] = _react.default.useState({
+    left: 0,
+    top: 0,
+    width: 500,
+    height: 300
+  });
   const classes = (0, _AiCopilot.default)();
   const getCurrentPath = () => window.location.pathname.replace(/^\/|\/$/g, '');
   const getDescriptionFromOtherPaths = (pathTrainData, xpath) => {
     if (!pathTrainData) {
       return '';
     }
-    const paths = Object.keys(pathTrainData);
-    for (let i = 0; i < paths.length; i += 1) {
-      if (pathTrainData[paths[i]][xpath] && pathTrainData[paths[i]][xpath].description && pathTrainData[paths[i]][xpath].description.length) {
-        return pathTrainData[paths[i]][xpath].description;
+    for (let i = 0; i < pathTrainData.length; i += 1) {
+      if (pathTrainData[i].elements[xpath] && pathTrainData[i].elements[xpath].description && pathTrainData[i].elements[xpath].description.length) {
+        return pathTrainData[i].elements[xpath].description;
       }
     }
     return '';
@@ -64,15 +61,15 @@ function AiCopilot(props) {
     const headerElements = (0, _aiCopilotUtils.getHeaderElementsWithVisibleText)();
     elements.push(...headerElements);
     const path = getCurrentPath();
-    const pathTrainData = trainData[path];
+    const pathTrainData = trainData.find(tdata => tdata.path === path);
     let foundElm = false;
     elements.filter(elm => (0, _aiCopilotUtils.isElementVisible)(elm)).every(elm => {
       const xpath = (0, _aiCopilotUtils.generateXPathWithNearestParentId)(elm);
-      if (!xpath || xpath.length === 0 || pathTrainData && pathTrainData[xpath] && pathTrainData[xpath].trained) {
+      if (!xpath || xpath.length === 0 || pathTrainData && pathTrainData.elements[xpath] && pathTrainData.elements[xpath].trained) {
         return true;
       }
-      if (pathTrainData && pathTrainData[xpath] && pathTrainData[xpath].description.length) {
-        setDescription(pathTrainData[xpath].description || '');
+      if (pathTrainData && pathTrainData.elements[xpath] && pathTrainData.elements[xpath].description.length) {
+        setDescription(pathTrainData.elements[xpath].description || '');
       } else {
         setDescription(getDescriptionFromOtherPaths(trainData, xpath));
       }
@@ -97,17 +94,25 @@ function AiCopilot(props) {
     const xpath = (0, _aiCopilotUtils.generateXPathWithNearestParentId)(anchorEl);
     const query = (0, _aiCopilotUtils.generateCssSelector)(anchorEl);
     const path = getCurrentPath();
-    const pathTrainData = trainData[path] || {};
-    pathTrainData[xpath] = {
+    let pathTrainData = trainData.find(page => page.path === path);
+    if (!pathTrainData) {
+      pathTrainData = {
+        path,
+        name: path,
+        description: '',
+        elements: {},
+        uuid: (0, _uuid.v4)()
+      };
+      trainData.push(pathTrainData);
+    }
+    pathTrainData.elements[xpath] = {
       xpath,
       description,
       cssSelector: query,
       skipped,
       trained: true
     };
-    console.log('Trained data', xpath, pathTrainData[xpath]);
-    trainData[path] = pathTrainData;
-    localStorage.setItem('navGptTrainData', JSON.stringify(trainData));
+    console.log('Trained data', xpath, pathTrainData.elements[xpath]);
     setTrainData(JSON.parse(JSON.stringify(trainData)));
     setDescription('');
     setTimeout(() => {
@@ -116,7 +121,6 @@ function AiCopilot(props) {
   };
   const onChangeTrainedData = trainedData => {
     setTrainData(trainedData);
-    localStorage.setItem('navGptTrainData', JSON.stringify(trainedData));
   };
   (0, _react.useEffect)(() => {
     if (!anchorEl) {
@@ -153,20 +157,19 @@ function AiCopilot(props) {
       height: windowHeight - dimensions.y - dimensions.height - padding
     });
     setBackdropDimensions(backdropDimensions);
-    const aOrigin = {
-      vertical: 'bottom',
-      horizontal: 'right'
+    const dims = {
+      left: dimensions.x - 16,
+      top: dimensions.y + dimensions.height + 4,
+      width: 500,
+      height: 250
     };
-    const tOrigin = {
-      vertical: 'top',
-      horizontal: 'left'
-    };
-    if (dimensions.x + dimensions.width > windowWidth - 550) {
-      tOrigin.horizontal = 'right';
-      aOrigin.horizontal = 'left';
+    if (dimensions.x + dimensions.width > windowWidth - 500) {
+      dims.left = Math.max(0, dimensions.x - 500);
     }
-    setTransformOrigin(tOrigin);
-    setAnchorOrigin(aOrigin);
+    if (dimensions.y + dimensions.height > windowHeight - 250) {
+      dims.top = Math.max(0, dimensions.y - dimensions.height - 250);
+    }
+    setPopDimensions(dims);
     setXpath((0, _aiCopilotUtils.generateXPathWithNearestParentId)(anchorEl));
   }, [anchorEl]);
   const loadTrainedData = async () => {
@@ -174,11 +177,9 @@ function AiCopilot(props) {
     const data = await tresponse.json();
     if (data && data.length) {
       const tData = JSON.parse(data);
-      Object.keys(tData).forEach(page => {
-        Object.keys(tData[page]).forEach(xpath => {
-          if (typeof tData[page][xpath] === 'object') {
-            tData[page][xpath].trained = false;
-          }
+      tData.forEach(page => {
+        Object.keys(page.elements).forEach(xpath => {
+          page.elements[xpath].trained = false;
         });
       });
       setTrainData(tData);
@@ -188,7 +189,7 @@ function AiCopilot(props) {
     loadTrainedData();
   }, []);
   const highlights = (0, _aiCopilotUtils.getElementHighlights)(anchorEl);
-  const handleChange = (event, newValue) => {
+  const handleChange = newValue => {
     setTabValue(newValue);
   };
   return /*#__PURE__*/_react.default.createElement(_Box.default, {
@@ -199,15 +200,18 @@ function AiCopilot(props) {
   }, /*#__PURE__*/_react.default.createElement(_TrainOutlined.default, null)), /*#__PURE__*/_react.default.createElement(_IconButton.default, {
     onClick: onClickBugReport,
     "aria-label": "train"
-  }, /*#__PURE__*/_react.default.createElement(_Photo.default, null)), /*#__PURE__*/_react.default.createElement(_Popover.default, {
-    open: !!anchorEl,
-    anchorEl: anchorEl,
-    anchorOrigin: anchorOrigin,
-    transformOrigin: transformOrigin
-  }, anchorEl && /*#__PURE__*/_react.default.createElement(_Box.default, {
+  }, /*#__PURE__*/_react.default.createElement(_Photo.default, null)), anchorEl && /*#__PURE__*/(0, _reactDom.createPortal)( /*#__PURE__*/_react.default.createElement(_Box.default, null, backdropDimensions.map(dim => /*#__PURE__*/_react.default.createElement(_Box.default, {
+    style: {
+      ...dim
+    },
+    className: classes.backdrop
+  }))), document.body), anchorEl && /*#__PURE__*/(0, _reactDom.createPortal)( /*#__PURE__*/_react.default.createElement(_Box.default, {
+    style: {
+      ...popDimensions
+    },
     m: 1,
     p: 2,
-    width: 500
+    className: classes.popover
   }, /*#__PURE__*/_react.default.createElement(_Box.default, {
     pb: 2,
     display: "flex",
@@ -260,12 +264,7 @@ function AiCopilot(props) {
     className: classes.ftBtn,
     color: "primary",
     onClick: onClickNext
-  }, "Next"))))), anchorEl && /*#__PURE__*/(0, _reactDom.createPortal)( /*#__PURE__*/_react.default.createElement(_Box.default, null, backdropDimensions.map(dim => /*#__PURE__*/_react.default.createElement(_Box.default, {
-    style: {
-      ...dim
-    },
-    className: classes.backdrop
-  }))), document.body), /*#__PURE__*/_react.default.createElement(_Drawer.default, {
+  }, "Next")))), document.body), /*#__PURE__*/_react.default.createElement(_Drawer.default, {
     anchor: "right",
     open: openAutomation,
     onClose: () => setOpenAutomation(false),
@@ -302,15 +301,10 @@ function AiCopilot(props) {
 }
 AiCopilot.propTypes = {
   navigate: _propTypes.default.function,
-  history: _propTypes.default.object,
-  components: _propTypes.default.object
+  history: _propTypes.default.object
 };
 AiCopilot.defaultProps = {
   navigate: null,
-  history: null,
-  components: {
-    Popover: _Popover.default,
-    IconButton: _Popover.default
-  }
+  history: null
 };
 var _default = exports.default = /*#__PURE__*/_react.default.memo(AiCopilot);

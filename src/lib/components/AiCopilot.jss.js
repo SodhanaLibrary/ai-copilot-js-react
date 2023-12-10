@@ -16,12 +16,10 @@ const useStyles = makeStyles(theme => ({
         zIndex: 1300,
     },
     popover: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        zIndex: 1001,
+        position: 'absolute',
+        zIndex: 1500,
+        background: '#fff',
+        border: '1px solid #ccc',
     },
     content: {
         background: '#fff',

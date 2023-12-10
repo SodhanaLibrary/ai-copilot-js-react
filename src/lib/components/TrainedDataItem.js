@@ -1,16 +1,16 @@
 import React from 'react';
 import { useState } from 'react';
-import Box from '@material-ui/core/Box';
-import TextField from '@material-ui/core/TextField';
-import Button from '@material-ui/core/Button';
-import Accordion from '@material-ui/core/Accordion';
-import AccordionSummary from '@material-ui/core/AccordionSummary';
-import AccordionDetails from '@material-ui/core/AccordionDetails';
-import Typography from '@material-ui/core/Typography';
+import Accordion from './supported/Accordion';
+import AccordionSummary from './supported/AccordionSummary';
+import AccordionDetails from './supported/AccordionDetails';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import IconButton from '@material-ui/core/IconButton';
+import IconButton from './supported/IconButton';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
+import Typography from './supported/Typography';
+import Box from './supported/Box';
+import TextField from './supported/TextField';
+import Button from './supported/Button';
 
 // ----------------------------------------------------------------------
 

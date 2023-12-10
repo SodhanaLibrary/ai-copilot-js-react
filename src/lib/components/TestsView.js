@@ -1,22 +1,10 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import Box from '@material-ui/core/Box';
-import TextField from '@material-ui/core/TextField';
-import Button from '@material-ui/core/Button';
-import Accordion from '@material-ui/core/Accordion';
-import AccordionSummary from '@material-ui/core/AccordionSummary';
-import AccordionDetails from '@material-ui/core/AccordionDetails';
-import Typography from '@material-ui/core/Typography';
-import Tooltip from '@material-ui/core/Tooltip';
+import Accordion from './supported/Accordion';
+import AccordionSummary from './supported/AccordionSummary';
+import AccordionDetails from './supported/AccordionDetails';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
-import IconButton from '@material-ui/core/IconButton';
+import IconButton from './supported/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 import DeleteIcon from '@material-ui/icons/Delete';
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
@@ -24,6 +12,17 @@ import AddCircleOutlineOutlined from '@material-ui/icons/AddCircleOutlineOutline
 import AssignmentIcon from '@material-ui/icons/Assignment';
 import PropTypes from 'prop-types';
 import { v4 as uuidv4 } from 'uuid';
+import Typography from './supported/Typography';
+import Button from './supported/Button';
+import TextField from './supported/TextField';
+import Box from './supported/Box';
+import Table from './supported/Table';
+import TableBody from './supported/TableBody';
+import TableCell from './supported/TableCell';
+import TableContainer from './supported/TableContainer';
+import TableHead from './supported/TableHead';
+import TableRow from './supported/TableRow';
+import Tooltip from './supported/Tooltip';
 import {waitForElement, findElementByXPath, triggerClickEvent, typeText, navigateTo, findElementBySelector} from './aiCopilotUtils';
 import useStyles from './TestsView.jss';
 
@@ -301,7 +300,7 @@ function TestsView(props) {
           <Button variant="contained" onClick={generateSanityTests}>Generate sanity test</Button>
           <Button style={{marginLeft: 8}} variant="contained" color="secondary" onClick={() => setShowAddTestSuiteForm(true)}>Add</Button>
         </Box>
-         {showAddTestSuiteForm && <Paper style={{padding: 2, marginTop: 1}}>
+         {showAddTestSuiteForm && <Box style={{padding: 2, marginTop: 1}}>
           <Box p={2} display="flex" alignItems="center">
             <Box width="20%">Name : </Box>
             <Box flexGrow={1}>
@@ -316,7 +315,7 @@ function TestsView(props) {
               </Button>
             </Box>
           </Box>
-         </Paper>}
+         </Box>}
          {testsData && !currentTest && testsData.map(testSuite => <Box key={testSuite.name} mt={1}>
           <Accordion>
             <AccordionSummary
@@ -337,7 +336,7 @@ function TestsView(props) {
             </AccordionSummary>
             <AccordionDetails>
             <Box width="100%">
-              {showAddTestForm && <Paper style={{padding: 16, marginTop: 8}}>
+              {showAddTestForm && <Box style={{padding: 16, marginTop: 8}}>
                   <Box pb={2} display="flex" alignItems="center">
                       <Box width="20%">Name : </Box>
                       <Box flexGrow={1}>
@@ -358,7 +357,7 @@ function TestsView(props) {
                       </Button>
                       </Box>
                   </Box>
-              </Paper>}
+              </Box>}
               <Box width="100%">
                 {testSuite.tests.map(test => {
                    let style;
@@ -375,7 +374,7 @@ function TestsView(props) {
             </AccordionDetails>
           </Accordion>
          </Box>)}
-         {currentTest && <Paper style={{marginTop: 1}} mt={1}>
+         {currentTest && <Box style={{marginTop: 1}} mt={1}>
             <Box p={2} display="flex" justifyContent="space-between" alignItems="center">
                 <Box display="flex" alignItems="center">
                     <Typography variant="h5">
@@ -399,7 +398,7 @@ function TestsView(props) {
                     </IconButton>
                 </Box>
             </Box>
-            <TableContainer component={Paper}>
+            <TableContainer component={Box}>
                 <Table style={{ minWidth: 650 }} aria-label="simple table">
                     <TableHead>
                     <TableRow>
@@ -432,7 +431,7 @@ function TestsView(props) {
                     </TableBody>
                 </Table>
             </TableContainer>
-         </Paper>}
+         </Box>}
     </Box>
   );
 }
